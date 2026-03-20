@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { UX_CATEGORIES } from '../utils/promptConfig';
 
 /* ─── Colour helpers ──────────────────────────────────────────── */
 const scoreColor = (s) =>
@@ -7,24 +8,16 @@ const scoreLabel = (s) =>
     s >= 80 ? 'Excellent' : s >= 60 ? 'Good' : s >= 40 ? 'Needs Work' : 'Critical';
 
 const SEVERITY_CFG = {
-    High: { color: '#f87171', bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.25)', dot: '#f87171' },
-    Medium: { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)', border: 'rgba(251,191,36,0.25)', dot: '#fbbf24' },
-    Low: { color: '#60a5fa', bg: 'rgba(96,165,250,0.10)', border: 'rgba(96,165,250,0.25)', dot: '#60a5fa' },
+    High:   { color: '#f87171', bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.25)' },
+    Medium: { color: '#fbbf24', bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.25)'  },
+    Low:    { color: '#60a5fa', bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.25)'  },
 };
 
 const PRIORITY_CFG = {
-    'Quick Win': { color: '#34d399', bg: 'rgba(52,211,153,0.10)', border: 'rgba(52,211,153,0.25)' },
-    'Strategic': { color: '#a78bfa', bg: 'rgba(167,139,250,0.10)', border: 'rgba(167,139,250,0.25)' },
-    'Long-term': { color: '#60a5fa', bg: 'rgba(96,165,250,0.10)', border: 'rgba(96,165,250,0.25)' },
+    'Quick Win':  { color: '#34d399', bg: 'rgba(52,211,153,0.10)',  border: 'rgba(52,211,153,0.25)'  },
+    'Strategic':  { color: '#a78bfa', bg: 'rgba(167,139,250,0.10)', border: 'rgba(167,139,250,0.25)' },
+    'Long-term':  { color: '#60a5fa', bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.25)'  },
 };
-
-const CATEGORIES = [
-    { key: 'usability', label: 'Usability', icon: '🎯' },
-    { key: 'navigation', label: 'Navigation', icon: '🧭' },
-    { key: 'accessibility', label: 'Accessibility', icon: '♿' },
-    { key: 'visual_hierarchy', label: 'Visual Hierarchy', icon: '👁️' },
-    { key: 'layout_consistency', label: 'Layout Consistency', icon: '📐' },
-];
 
 /* ─── Score Gauge (SVG half-circle) ──────────────────────────── */
 function ScoreGauge({ score }) {
@@ -43,17 +36,14 @@ function ScoreGauge({ score }) {
         <div className="flex flex-col items-center">
             <div className="relative w-36 h-20">
                 <svg viewBox="0 0 120 65" className="w-full h-full overflow-visible">
-                    {/* Background track */}
                     <path d="M 8 60 A 52 52 0 0 1 112 60"
                         fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
-                    {/* Colored value arc */}
                     <path d="M 8 60 A 52 52 0 0 1 112 60"
                         fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         style={{ transition: 'stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 8px ${color})` }}
                     />
-                    {/* Tick marks */}
                     {[0, 25, 50, 75, 100].map((v) => {
                         const angle = Math.PI - (v / 100) * Math.PI;
                         const ix = 60 + 52 * Math.cos(angle);
@@ -63,7 +53,6 @@ function ScoreGauge({ score }) {
                         return <line key={v} x1={ix} y1={iy} x2={ox} y2={oy} stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />;
                     })}
                 </svg>
-                {/* Score number */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center leading-none">
                     <div className="text-4xl font-display font-800" style={{ color }}>{clamped}</div>
                     <div className="text-xs text-slate-500 mt-0.5">/100</div>
@@ -74,7 +63,7 @@ function ScoreGauge({ score }) {
     );
 }
 
-/* ─── Category Score Bar (animated horizontal bar) ───────────── */
+/* ─── Category Score Bar ──────────────────────────────────────── */
 function CategoryBar({ label, icon, score, delay = 0 }) {
     const [animated, setAnimated] = useState(false);
     useEffect(() => {
@@ -82,7 +71,7 @@ function CategoryBar({ label, icon, score, delay = 0 }) {
         return () => clearTimeout(t);
     }, [delay]);
 
-    if (score === null) return null;
+    if (score === null || score === undefined) return null;
     const clamped = Math.max(0, Math.min(100, score));
     const color = scoreColor(clamped);
 
@@ -96,6 +85,7 @@ function CategoryBar({ label, icon, score, delay = 0 }) {
                 <div className="flex items-center gap-2">
                     <span className="font-bold" style={{ color }}>{clamped}</span>
                     <span className="text-slate-600">/ 100</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${color}18`, color }}>{scoreLabel(clamped)}</span>
                 </div>
             </div>
             <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
@@ -107,7 +97,6 @@ function CategoryBar({ label, icon, score, delay = 0 }) {
                         transition: `width 1.2s cubic-bezier(0.4,0,0.2,1) ${delay}ms`,
                     }}
                 >
-                    {/* Shimmer on bar */}
                     <div className="absolute inset-0"
                         style={{
                             background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
@@ -122,17 +111,17 @@ function CategoryBar({ label, icon, score, delay = 0 }) {
     );
 }
 
-/* ─── Severity Distribution Mini Chart ───────────────────────── */
+/* ─── Severity Distribution ───────────────────────────────────── */
 function SeverityDistribution({ issues }) {
-    const high = issues.filter(i => i.severity === 'High').length;
+    const high   = issues.filter(i => i.severity === 'High').length;
     const medium = issues.filter(i => i.severity === 'Medium').length;
-    const low = issues.filter(i => i.severity === 'Low').length;
-    const total = Math.max(issues.length, 1);
+    const low    = issues.filter(i => i.severity === 'Low').length;
+    const total  = Math.max(issues.length, 1);
 
     const bars = [
-        { label: 'High', count: high, color: '#f87171', pct: (high / total) * 100 },
+        { label: 'High',   count: high,   color: '#f87171', pct: (high / total) * 100 },
         { label: 'Medium', count: medium, color: '#fbbf24', pct: (medium / total) * 100 },
-        { label: 'Low', count: low, color: '#60a5fa', pct: (low / total) * 100 },
+        { label: 'Low',    count: low,    color: '#60a5fa', pct: (low / total) * 100 },
     ];
 
     return (
@@ -159,23 +148,23 @@ function SeverityDistribution({ issues }) {
     );
 }
 
-/* ─── Priority Distribution ─────────────────────────────────── */
+/* ─── Priority Distribution ──────────────────────────────────── */
 function PriorityDistribution({ suggestions }) {
-    const qw = suggestions.filter(s => s.priority === 'Quick Win').length;
+    const qw  = suggestions.filter(s => s.priority === 'Quick Win').length;
     const str = suggestions.filter(s => s.priority === 'Strategic').length;
-    const lt = suggestions.filter(s => s.priority === 'Long-term').length;
+    const lt  = suggestions.filter(s => s.priority === 'Long-term').length;
 
     return (
         <div className="glass-card rounded-2xl p-4">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Fix Priority</p>
             <div className="space-y-2">
                 {[
-                    { label: 'Quick Win', count: qw, color: '#34d399' },
+                    { label: 'Quick Win', count: qw,  color: '#34d399' },
                     { label: 'Strategic', count: str, color: '#a78bfa' },
-                    { label: 'Long-term', count: lt, color: '#60a5fa' },
+                    { label: 'Long-term', count: lt,  color: '#60a5fa' },
                 ].map(({ label, count, color }) => (
                     <div key={label} className="flex items-center gap-2">
-                        <div className="w-16 text-right text-xs text-slate-500 flex-shrink-0">{label}</div>
+                        <div className="w-20 text-right text-xs text-slate-500 flex-shrink-0">{label}</div>
                         <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                             <div className="h-full rounded-full"
                                 style={{
@@ -209,7 +198,7 @@ function StatCard({ value, label, color, icon }) {
 }
 
 /* ─── Expandable Issue Card ──────────────────────────────────── */
-function IssueCard({ issue, index }) {
+function IssueCard({ issue }) {
     const [expanded, setExpanded] = useState(false);
     const cfg = SEVERITY_CFG[issue.severity] || SEVERITY_CFG.Medium;
 
@@ -220,7 +209,6 @@ function IssueCard({ issue, index }) {
             style={{ background: cfg.bg, borderColor: cfg.border }}
         >
             <div className="flex items-start gap-3 p-4">
-                {/* Severity badge */}
                 <div className="flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold px-2 py-0.5 rounded-md"
                         style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}30` }}>
@@ -260,6 +248,9 @@ function SuggestionCard({ suggestion }) {
                 </span>
             </div>
             <div className="flex-1 min-w-0">
+                {suggestion.category && (
+                    <p className="text-xs text-slate-500 mb-0.5">{suggestion.category}</p>
+                )}
                 <p className="text-sm font-semibold text-slate-200 mb-1">{suggestion.title}</p>
                 <p className="text-sm text-slate-400 leading-relaxed">{suggestion.description}</p>
             </div>
@@ -286,15 +277,13 @@ function Tab({ active, onClick, children, id }) {
 }
 
 /* ─── MAIN COMPONENT ─────────────────────────────────────────── */
-export default function ResultDisplay({ result, url, testType, websiteType, onReset }) {
+export default function ResultDisplay({ result, url, websiteType, onReset }) {
     const [tab, setTab] = useState('issues');
     const isRaw = result?._raw;
 
-    const highCount = result?.issues?.filter(i => i.severity === 'High').length ?? 0;
-    const mediumCount = result?.issues?.filter(i => i.severity === 'Medium').length ?? 0;
-    const lowCount = result?.issues?.filter(i => i.severity === 'Low').length ?? 0;
+    const highCount     = result?.issues?.filter(i => i.severity === 'High').length ?? 0;
     const quickWinCount = result?.suggestions?.filter(s => s.priority === 'Quick Win').length ?? 0;
-    const catScores = result?.category_scores;
+    const catScores     = result?.category_scores;
 
     return (
         <div id="results-section" className="space-y-5 section-enter">
@@ -326,50 +315,49 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
                                 className="text-xs text-brand-400 hover:underline truncate max-w-xs">{url}</a>
                         </div>
 
-                        <h2 className="text-xl font-display font-700 text-white mb-1">UX Analysis Report</h2>
-                        <p className="text-xs text-slate-500 mb-5">
-                            {testType}
-                        </p>
+                        <h2 className="text-xl font-display font-700 text-white mb-1">Full UX Audit Report</h2>
+                        <p className="text-xs text-slate-500 mb-5">7 categories · Automated analysis</p>
 
                         {/* Score + Stats grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                             {/* Left: Gauge */}
-                            <div className="flex flex-col items-center py-4 rounded-2xl"
+                            <div className="md:col-span-5 lg:col-span-4 flex flex-col items-center py-6 rounded-2xl h-full justify-center"
                                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Overall UX Score</p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-6">Overall UX Score</p>
                                 <ScoreGauge score={result.score} />
-                                <p className="text-xs text-slate-500 mt-4 text-center max-w-[180px] leading-relaxed">
+                                <p className="text-xs text-slate-500 mt-6 text-center max-w-[220px] leading-relaxed px-4">
                                     {result.summary}
                                 </p>
                             </div>
 
                             {/* Right: Quick-stat cards */}
-                            <div className="grid grid-cols-2 gap-2.5">
-                                <StatCard value={result.issues?.length ?? 0} label="Total Issues" color="#f87171" icon="⚠️" />
-                                <StatCard value={highCount} label="High Severity" color="#fb923c" icon="🔴" />
-                                <StatCard value={quickWinCount} label="Quick Wins" color="#34d399" icon="⚡" />
-                                <StatCard value={result.strengths?.length ?? 0} label="Strengths Found" color="#a78bfa" icon="✅" />
+                            <div className="md:col-span-7 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <StatCard value={result.issues?.length ?? 0}     label="Total Issues"    color="#f87171" icon="⚠️" />
+                                <StatCard value={highCount}                        label="High Severity"   color="#fb923c" icon="🔴" />
+                                <StatCard value={quickWinCount}                    label="Quick Wins"      color="#34d399" icon="⚡" />
+                                <StatCard value={result.strengths?.length ?? 0}   label="Strengths Found" color="#a78bfa" icon="✅" />
                             </div>
                         </div>
                     </div>
 
-                    {/* ══ SECTION 2: Category Scores ════════════════ */}
+                    {/* ══ SECTION 2: 7 Category Scores ══════════════ */}
                     {catScores && Object.values(catScores).some(v => v !== null) && (
                         <div className="glass-card rounded-3xl p-6">
                             <div className="flex items-center gap-2 mb-5">
                                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm"
                                     style={{ background: 'rgba(249,115,22,0.15)' }}>📊</div>
                                 <h3 className="text-base font-display font-600 text-white">Category Score Breakdown</h3>
+                                <span className="ml-auto text-xs text-slate-500">7 dimensions</span>
                             </div>
-                            <div className="space-y-5">
-                                {CATEGORIES.map((cat, i) => (
-                                    catScores[cat.key] !== null && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                                {UX_CATEGORIES.map((cat, i) => (
+                                    catScores[cat.key] !== null && catScores[cat.key] !== undefined && (
                                         <CategoryBar
                                             key={cat.key}
                                             label={cat.label}
                                             icon={cat.icon}
                                             score={catScores[cat.key]}
-                                            delay={i * 120}
+                                            delay={i * 100}
                                         />
                                     )
                                 ))}
@@ -377,7 +365,7 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
 
                             {/* Average indicator */}
                             {(() => {
-                                const vals = CATEGORIES
+                                const vals = UX_CATEGORIES
                                     .map(c => catScores[c.key])
                                     .filter(v => typeof v === 'number');
                                 if (!vals.length) return null;
@@ -393,7 +381,7 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
                         </div>
                     )}
 
-                    {/* ══ SECTION 3: Distribution Charts ═══════════ */}
+                    {/* ══ SECTION 3: Distribution Charts ════════════ */}
                     {(result.issues?.length > 0 || result.suggestions?.length > 0) && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {result.issues?.length > 0 && <SeverityDistribution issues={result.issues} />}
@@ -401,7 +389,7 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
                         </div>
                     )}
 
-                    {/* ══ SECTION 4: Tabbed Detail ═════════════════ */}
+                    {/* ══ SECTION 4: Tabbed Detail ══════════════════ */}
                     <div className="glass-card rounded-3xl p-6">
                         {/* Tabs */}
                         <div className="flex flex-wrap gap-2 mb-5">
@@ -421,13 +409,12 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
                         {/* ── Issues ── */}
                         {tab === 'issues' && (
                             <div className="space-y-2.5">
-                                {/* Sort: High → Medium → Low */}
                                 {[...result.issues]
                                     .sort((a, b) => {
                                         const order = { High: 0, Medium: 1, Low: 2 };
                                         return (order[a.severity] ?? 3) - (order[b.severity] ?? 3);
                                     })
-                                    .map((issue, i) => <IssueCard key={i} issue={issue} index={i} />)
+                                    .map((issue, i) => <IssueCard key={i} issue={issue} />)
                                 }
                                 {result.issues.length === 0 && (
                                     <div className="text-center py-8 text-slate-400">🎉 No issues detected!</div>
@@ -437,7 +424,7 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
 
                         {/* ── Suggestions ── */}
                         {tab === 'suggestions' && (
-                            <div className="space-y-2.5">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {[...result.suggestions]
                                     .sort((a, b) => {
                                         const order = { 'Quick Win': 0, 'Strategic': 1, 'Long-term': 2 };
@@ -450,9 +437,9 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
 
                         {/* ── Strengths ── */}
                         {tab === 'strengths' && result.strengths?.length > 0 && (
-                            <div className="space-y-2.5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {result.strengths.map((s, i) => (
-                                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl"
+                                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl h-full"
                                         style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
                                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                                             style={{ background: 'rgba(52,211,153,0.2)' }}>
@@ -470,8 +457,8 @@ export default function ResultDisplay({ result, url, testType, websiteType, onRe
                     {/* ══ Disclaimer ════════════════════════════════ */}
                     <div className="text-center">
                         <p className="text-xs text-slate-600 leading-relaxed">
-                            ⓘ Analysis is generated by Groq Llama 3.3 70B based on the URL and website type context provided.
-                            Results reflect AI knowledge and UX best practices — conduct live user testing for definitive insights.
+                            ⓘ Analysis generated by Groq llama3-70b-8192 using live HTML signals and UX best practices.
+                            Conduct live user testing for definitive insights.
                         </p>
                     </div>
                 </>

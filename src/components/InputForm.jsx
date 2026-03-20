@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
 import { normaliseUrl, isLikelyValidDomain } from '../utils/groqApi';
 
-const TEST_TYPES = [
-    { value: 'Accessibility Test', emoji: '♿', desc: 'WCAG compliance & screen-reader support' },
-    { value: 'Usability Test', emoji: '🧪', desc: 'Task flow & cognitive load evaluation' },
-    { value: 'UI Design Evaluation', emoji: '🎨', desc: 'Visual hierarchy & design consistency' },
-    { value: 'UX Heuristic Analysis', emoji: '📋', desc: "Nielsen's 10 usability heuristics" },
-    { value: 'Full UX Audit', emoji: '🔍', desc: 'Comprehensive end-to-end UX audit' },
-];
-
 const WEBSITE_TYPES = [
     'E-commerce / Online Store',
     'SaaS / Web App',
@@ -28,28 +20,14 @@ export default function InputForm({ onAnalyze, isLoading }) {
     const [rawUrl, setRawUrl] = useState('');
     const [websiteType, setWebsiteType] = useState('');
     const [industry, setIndustry] = useState('');
-    const [selectedTests, setSelectedTests] = useState(new Set([TEST_TYPES[4].value]));
     const [errors, setErrors] = useState({});
-
-    const toggleTest = (value) => {
-        setSelectedTests((prev) => {
-            const next = new Set(prev);
-            if (next.has(value)) {
-                if (next.size === 1) return next; // keep at least one
-                next.delete(value);
-            } else {
-                next.add(value);
-            }
-            return next;
-        });
-    };
 
     const validate = () => {
         const errs = {};
         if (!rawUrl.trim()) {
             errs.url = 'Please enter a website URL or domain name.';
         } else if (!isLikelyValidDomain(rawUrl)) {
-            errs.url = 'That doesn\'t look like a valid domain. Try: example.com or https://example.com';
+            errs.url = "That doesn't look like a valid domain. Try: example.com or https://example.com";
         }
         if (!websiteType) {
             errs.websiteType = 'Please select the website type.';
@@ -63,12 +41,9 @@ export default function InputForm({ onAnalyze, isLoading }) {
         setErrors(errs);
         if (Object.keys(errs).length === 0) {
             const finalUrl = normaliseUrl(rawUrl);
-            const testLabel = Array.from(selectedTests).join(' + ');
-            onAnalyze(finalUrl, testLabel, websiteType, industry.trim());
+            onAnalyze(finalUrl, websiteType, industry.trim());
         }
     };
-
-    const isActive = (v) => selectedTests.has(v);
 
     return (
         <div id="input-form-section" className="glass-card rounded-3xl p-8 animate-fade-in-up">
@@ -82,12 +57,24 @@ export default function InputForm({ onAnalyze, isLoading }) {
                     </svg>
                 </div>
                 <div>
-                    <h2 className="text-lg font-display font-600 text-white leading-tight">UX Analysis Setup</h2>
-                    <p className="text-xs text-slate-500">Powered by Groq · Llama 3.3 70B</p>
+                    <h2 className="text-lg font-display font-600 text-white leading-tight">Full UX Audit</h2>
+                    <p className="text-xs text-slate-500">All 7 categories · Powered by Groq · Llama 3 70B</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+            {/* Automated audit notice */}
+            <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl"
+                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <span className="text-lg">🤖</span>
+                <div>
+                    <p className="text-xs font-semibold text-indigo-300">Fully Automated — No configuration needed</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Audits Visual Design, Accessibility, Performance, Navigation, Mobile, Content &amp; Interaction
+                    </p>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
 
                 {/* ── Website URL ─────────────────────────────────── */}
                 <div>
@@ -185,81 +172,25 @@ export default function InputForm({ onAnalyze, isLoading }) {
                     </div>
                 </div>
 
-                {/* ── Analysis Type — multiselect ─────────────────── */}
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <label className="text-sm font-medium text-slate-300">
-                            Analysis Type
-                            <span className="ml-2 text-xs text-slate-500 font-normal">— select one or more</span>
-                        </label>
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                            style={{
-                                background: 'rgba(249,115,22,0.12)',
-                                color: '#fb923c',
-                                border: '1px solid rgba(249,115,22,0.3)',
-                            }}>
-                            {selectedTests.size} selected
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                        {TEST_TYPES.map((type) => {
-                            const active = isActive(type.value);
-                            return (
-                                <button
-                                    key={type.value}
-                                    type="button"
-                                    id={`test-type-${type.value.replace(/\s+/g, '-').toLowerCase()}`}
-                                    onClick={() => toggleTest(type.value)}
-                                    className={`relative flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-200 ${active
-                                            ? 'border-orange-500/50 bg-orange-500/8 shadow-lg shadow-orange-500/10'
-                                            : 'border-white/8 bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.04]'
-                                        }`}
-                                >
-                                    <div className={`absolute top-2.5 right-2.5 w-4 h-4 rounded flex items-center justify-center border transition-all ${active ? 'border-orange-500 bg-orange-500' : 'border-white/20 bg-transparent'
-                                        }`}>
-                                        {active && (
-                                            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                                                <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <span className="text-xl leading-none mt-0.5">{type.emoji}</span>
-                                    <div className="pr-5">
-                                        <p className={`text-xs font-semibold leading-tight ${active ? 'text-orange-300' : 'text-slate-300'}`}>
-                                            {type.value}
-                                        </p>
-                                        <p className="text-xs text-slate-500 mt-0.5 leading-tight">{type.desc}</p>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Selected pills */}
-                    {selectedTests.size > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                            {Array.from(selectedTests).map((t) => {
-                                const type = TEST_TYPES.find(tt => tt.value === t);
-                                return (
-                                    <span key={t}
-                                        className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
-                                        style={{
-                                            background: 'rgba(249,115,22,0.1)',
-                                            border: '1px solid rgba(249,115,22,0.25)',
-                                            color: '#fb923c',
-                                        }}>
-                                        {type?.emoji} {t}
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleTest(t)}
-                                            className="hover:text-red-400 transition-colors"
-                                        >×</button>
-                                    </span>
-                                );
-                            })}
+                {/* ── Audit categories preview ──────────────────── */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                        { icon: '🎨', label: 'Visual Design' },
+                        { icon: '♿', label: 'Accessibility' },
+                        { icon: '⚡', label: 'Performance' },
+                        { icon: '🧭', label: 'Navigation' },
+                        { icon: '📱', label: 'Mobile' },
+                        { icon: '📝', label: 'Content' },
+                        { icon: '🖱️', label: 'Interaction' },
+                        { icon: '📊', label: '7 Categories' },
+                    ].map(({ icon, label }) => (
+                        <div key={label}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-400"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                            <span className="text-sm">{icon}</span>
+                            <span>{label}</span>
                         </div>
-                    )}
+                    ))}
                 </div>
 
                 {/* ── Submit ─────────────────────────────────────── */}
@@ -281,10 +212,7 @@ export default function InputForm({ onAnalyze, isLoading }) {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z" fill="white" strokeWidth="0.5" strokeLinejoin="round" />
                             </svg>
-                            Analyze UX
-                            {selectedTests.size > 1 && (
-                                <span className="text-xs font-normal opacity-80">({selectedTests.size} tests)</span>
-                            )}
+                            Run Full UX Audit
                         </>
                     )}
                 </button>

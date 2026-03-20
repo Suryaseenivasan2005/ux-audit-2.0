@@ -3,9 +3,9 @@ import React from 'react';
 const DOT_COUNT = 12;
 
 const STEPS = [
-    { label: 'Connecting to Groq API', done: true },
-    { label: 'Analyzing UX patterns & structure', done: true },
-    { label: 'Scoring 5 UX dimensions', done: false },
+    { label: 'Fetching live page signals via proxy', done: true },
+    { label: 'Sending HTML signals to Groq LLM', done: true },
+    { label: 'Scoring 7 UX dimensions…', done: false },
 ];
 
 export default function Loader() {
@@ -41,8 +41,8 @@ export default function Loader() {
                 ⚡ Groq · Llama 3.3 70B
             </p>
             <p className="text-slate-400 text-sm mb-8 max-w-xs mx-auto">
-                Evaluating usability, navigation, accessibility, visual hierarchy,
-                and layout consistency across all selected test dimensions.
+                Running all 7 UX dimensions — Visual Design, Accessibility, Performance,
+                Navigation, Mobile, Content Clarity &amp; Interaction Feedback.
             </p>
 
             {/* Dot progress */}

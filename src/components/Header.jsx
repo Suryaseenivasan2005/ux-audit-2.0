@@ -15,9 +15,9 @@ const ShieldIcon = () => (
 );
 
 const FEATURES = [
-    { icon: '⚡', label: '5 Test Types' },
-    { icon: '🎯', label: 'Category Scores' },
-    { icon: '📊', label: 'Visual Charts' },
+    { icon: '⚡', label: 'Automated Flow' },
+    { icon: '🎯', label: '7 Category Scores' },
+    { icon: '📊', label: 'Visual Data' },
     { icon: '🔍', label: 'Actionable Insights' },
 ];
 
@@ -82,8 +82,8 @@ export default function Header() {
                     </h1>
 
                     <p className="text-slate-400 text-lg leading-relaxed max-w-xl mx-auto">
-                        Enter your website URL, select the analysis type, and get a comprehensive
-                        UX audit with scores, charts, and actionable recommendations — powered by Groq.
+                        Enter a website URL and instantly get a comprehensive automated 
+                        UX audit covering 7 key dimensions — powered by Groq.
                     </p>
 
                     {/* Feature pills */}
@@ -100,7 +100,7 @@ export default function Header() {
                     {/* Stats */}
                     <div className="flex items-center justify-center gap-10 mt-10 pt-8 border-t border-white/5">
                         {[
-                            { label: 'UX Dimensions', value: '5' },
+                            { label: 'UX Dimensions', value: '7' },
                             { label: 'Analysis Time', value: '<10s' },
                             { label: 'Charts Generated', value: '4+' },
                         ].map(({ label, value }) => (

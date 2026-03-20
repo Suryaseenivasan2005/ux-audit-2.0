@@ -10,15 +10,15 @@ export default function App() {
   const [state, setState] = useState('idle'); // 'idle' | 'loading' | 'result' | 'error'
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [meta, setMeta] = useState({ url: '', testType: '', websiteType: '' });
+  const [meta, setMeta] = useState({ url: '', websiteType: '' });
 
-  const handleAnalyze = async (url, testType, websiteType, industry) => {
+  const handleAnalyze = async (url, websiteType, industry) => {
     setState('loading');
     setError(null);
-    setMeta({ url, testType, websiteType });
+    setMeta({ url, websiteType });
 
     try {
-      const data = await analyzeWebsiteUX(url, testType, websiteType, industry);
+      const data = await analyzeWebsiteUX(url, websiteType, industry);
       setResult(data);
       setState('result');
       setTimeout(() => {
@@ -50,7 +50,7 @@ export default function App() {
 
       <Header />
 
-      <main className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pb-16">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pb-16">
 
         {/* ── Error Banner ───────────────────────────────── */}
         {state === 'error' && error && (
@@ -62,7 +62,7 @@ export default function App() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-red-400 mb-1">Analysis Failed</p>
+              <p className="text-sm font-semibold text-red-400 mb-1">Audit Failed</p>
               <p className="text-sm text-red-300/80 leading-relaxed whitespace-pre-line">{error}</p>
             </div>
             <button onClick={() => { setError(null); setState('idle'); }}
@@ -87,7 +87,6 @@ export default function App() {
           <ResultDisplay
             result={result}
             url={meta.url}
-            testType={meta.testType}
             websiteType={meta.websiteType}
             onReset={handleReset}
           />
