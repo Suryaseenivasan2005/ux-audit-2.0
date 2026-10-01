@@ -161,13 +161,19 @@ const translateGroqError = (axiosErr) => {
 
 // ── Main export: Full automated UX audit ────────────────────────────────────
 export const analyzeWebsiteUX = async (url, websiteType, industry) => {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+    const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = groqKey || geminiKey;
 
-    if (!apiKey || !apiKey.startsWith('gsk_')) {
+    const isGemini = apiKey?.startsWith('AIzaSy');
+    const isGroq = apiKey?.startsWith('gsk_');
+
+    if (!apiKey || (!isGemini && !isGroq)) {
         throw new Error(
-            'Groq API key is missing or invalid.\n\n' +
-            'Open your .env file and set:\nVITE_GROQ_API_KEY=gsk_your_real_key_here\n\n' +
-            'Get a free key at: https://console.groq.com/'
+            'API key is missing or invalid.\n\n' +
+            'Open your .env file and set one of the following:\n' +
+            '• VITE_GROQ_API_KEY=gsk_your_groq_key (from https://console.groq.com/)\n' +
+            '• VITE_GEMINI_API_KEY=AIzaSy_your_gemini_key (from https://aistudio.google.com/)'
         );
     }
 
@@ -177,33 +183,67 @@ export const analyzeWebsiteUX = async (url, websiteType, industry) => {
     // Step 2: Build the full audit prompt with signals
     const prompt = buildAuditPrompt(url, websiteType, industry, htmlSignals);
 
-    const requestBody = {
-        model: GROQ_MODEL,
-        messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 4096,
-        top_p: 1,
-        stream: false,
-    };
+    let rawText = '';
 
-    // Step 3: Call Groq API
-    let response;
-    try {
-        response = await axios.post(GROQ_API_URL, requestBody, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            timeout: 60000,
-        });
-    } catch (axiosErr) {
-        throw new Error(translateGroqError(axiosErr));
+    if (isGemini) {
+        // Step 3a: Call Google Gemini API (gemini-2.5-flash)
+        try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const response = await axios.post(
+                geminiUrl,
+                {
+                    contents: [
+                        {
+                            parts: [
+                                { text: `${SYSTEM_PROMPT}\n\n${prompt}` }
+                            ]
+                        }
+                    ],
+                    generationConfig: {
+                        temperature: 0.3,
+                        maxOutputTokens: 4096
+                    }
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 60000
+                }
+            );
+            rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        } catch (axiosErr) {
+            const msg = axiosErr?.response?.data?.error?.message ?? axiosErr?.message;
+            throw new Error(`Gemini API Error: ${msg}`);
+        }
+    } else {
+        // Step 3b: Call Groq API
+        const requestBody = {
+            model: GROQ_MODEL,
+            messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: prompt },
+            ],
+            temperature: 0.3,
+            max_tokens: 4096,
+            top_p: 1,
+            stream: false,
+        };
+
+        let response;
+        try {
+            response = await axios.post(GROQ_API_URL, requestBody, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                },
+                timeout: 60000,
+            });
+        } catch (axiosErr) {
+            throw new Error(translateGroqError(axiosErr));
+        }
+
+        rawText = response.data?.choices?.[0]?.message?.content ?? '';
     }
 
     // Step 4: Parse and return structured result
-    const rawText = response.data?.choices?.[0]?.message?.content ?? '';
     return parseGroqResponse(rawText, url);
 };

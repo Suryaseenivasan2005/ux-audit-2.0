@@ -67,7 +67,8 @@ Evaluate this website across ALL 7 UX dimensions below. Score each 0–100 (be s
 ## Rules
 - Use the extracted page signals as primary evidence where available
 - Cite specific observations (e.g. "H1 is missing", "no alt text on ${htmlSignals?.imgsMissingAlt ?? 0} images")
-- Provide MINIMUM 7 issues and 7 suggestions
+- Provide 5 to 7 issues and 5 to 7 suggestions covering the categories
+- Keep each description concise and punchy (15-30 words max per description) so the output JSON remains complete and never gets cut off mid-sentence
 - All suggestions must be immediately actionable with concrete steps
 - Return ONLY valid JSON — no markdown fences, no text outside the JSON
 

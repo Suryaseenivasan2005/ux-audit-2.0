@@ -80,7 +80,16 @@ export default function App() {
         )}
 
         {/* ── Loading ────────────────────────────────────── */}
-        {state === 'loading' && <Loader />}
+        {state === 'loading' && (
+          <Loader
+            url={meta.url}
+            provider={
+              (import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GEMINI_API_KEY)?.startsWith('AIzaSy')
+                ? 'Gemini 2.5 Flash'
+                : 'Groq Llama 3.3 70B'
+            }
+          />
+        )}
 
         {/* ── Results ───────────────────────────────────── */}
         {state === 'result' && result && (
