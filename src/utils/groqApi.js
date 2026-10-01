@@ -82,7 +82,50 @@ export const extractHtmlSignals = async (url) => {
     }
 };
 
-// ── Response parser ──────────────────────────────────────────────────────────
+// ── Response parser & truncation repair ─────────────────────────────────────
+const repairTruncatedJson = (str) => {
+    let s = str.trim();
+    if (!s) return s;
+    try {
+        JSON.parse(s);
+        return s;
+    } catch {
+        let inString = false;
+        for (let i = 0; i < s.length; i++) {
+            if (s[i] === '"' && (i === 0 || s[i - 1] !== '\\')) {
+                inString = !inString;
+            }
+        }
+        if (inString) {
+            s += '"';
+        }
+
+        s = s.replace(/,\s*$/, '');
+
+        const stack = [];
+        for (let i = 0; i < s.length; i++) {
+            const char = s[i];
+            if (char === '"') {
+                i++;
+                while (i < s.length && (s[i] !== '"' || s[i - 1] === '\\')) {
+                    i++;
+                }
+            } else if (char === '{' || char === '[') {
+                stack.push(char);
+            } else if (char === '}' && stack[stack.length - 1] === '{') {
+                stack.pop();
+            } else if (char === ']' && stack[stack.length - 1] === '[') {
+                stack.pop();
+            }
+        }
+        while (stack.length > 0) {
+            const open = stack.pop();
+            s += open === '{' ? '}' : ']';
+        }
+        return s;
+    }
+};
+
 const parseGroqResponse = (rawText, url) => {
     const cleaned = rawText
         .replace(/^```json\s*/i, '')
@@ -90,44 +133,49 @@ const parseGroqResponse = (rawText, url) => {
         .replace(/```\s*$/i, '')
         .trim();
 
+    let parsed;
     try {
-        const parsed = JSON.parse(cleaned);
-
-        // Build category_scores from the 7 required keys
-        const catScores = {};
-        for (const cat of UX_CATEGORIES) {
-            const val = parsed.category_scores?.[cat.key];
-            catScores[cat.key] = typeof val === 'number' ? Math.min(100, Math.max(0, val)) : null;
-        }
-
-        // Compute weighted overall score as average of available category scores
-        const validScores = Object.values(catScores).filter(v => v !== null);
-        const computedScore = validScores.length
-            ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-            : null;
-
-        return {
-            score: typeof parsed.score === 'number'
-                ? Math.min(100, Math.max(0, parsed.score))
-                : computedScore,
-            summary: parsed.summary || `UX analysis of ${url} completed.`,
-            category_scores: catScores,
-            issues: Array.isArray(parsed.issues) ? parsed.issues : [],
-            suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-            strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-        };
+        parsed = JSON.parse(cleaned);
     } catch {
-        // JSON parse failed — return raw text as fallback
-        return {
-            score: null,
-            summary: rawText,
-            category_scores: null,
-            issues: [],
-            suggestions: [],
-            strengths: [],
-            _raw: true,
-        };
+        try {
+            parsed = JSON.parse(repairTruncatedJson(cleaned));
+        } catch {
+            // JSON parse completely failed — return raw text as fallback
+            return {
+                score: null,
+                summary: rawText,
+                category_scores: null,
+                issues: [],
+                suggestions: [],
+                strengths: [],
+                _raw: true,
+            };
+        }
     }
+
+    // Build category_scores from the 7 required keys
+    const catScores = {};
+    for (const cat of UX_CATEGORIES) {
+        const val = parsed.category_scores?.[cat.key];
+        catScores[cat.key] = typeof val === 'number' ? Math.min(100, Math.max(0, val)) : null;
+    }
+
+    // Compute weighted overall score as average of available category scores
+    const validScores = Object.values(catScores).filter(v => v !== null);
+    const computedScore = validScores.length
+        ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+        : null;
+
+    return {
+        score: typeof parsed.score === 'number'
+            ? Math.min(100, Math.max(0, parsed.score))
+            : computedScore,
+        summary: parsed.summary || `UX analysis of ${url} completed.`,
+        category_scores: catScores,
+        issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+    };
 };
 
 // ── Friendly error translator ─────────────────────────────────────────────────
@@ -201,7 +249,7 @@ export const analyzeWebsiteUX = async (url, websiteType, industry) => {
                     ],
                     generationConfig: {
                         temperature: 0.3,
-                        maxOutputTokens: 4096
+                        maxOutputTokens: 8192
                     }
                 },
                 {
