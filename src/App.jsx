@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Header from './components/Header';
+import LandingHero from './components/LandingHero';
 import InputForm from './components/InputForm';
 import Loader from './components/Loader';
 import ResultDisplay from './components/ResultDisplay';
@@ -11,6 +11,16 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [meta, setMeta] = useState({ url: '', websiteType: '' });
+
+  const scrollToAudit = () => {
+    const section = document.getElementById('input-form-section');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        document.getElementById('website-url')?.focus();
+      }, 400);
+    }
+  };
 
   const handleAnalyze = async (url, websiteType, industry) => {
     setState('loading');
@@ -48,7 +58,7 @@ export default function App() {
       <div className="orb w-96 h-96 bottom-0 -left-48 opacity-8"
         style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
 
-      <Header />
+      <LandingHero onScrollToAudit={scrollToAudit} />
 
       <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pb-16">
 
